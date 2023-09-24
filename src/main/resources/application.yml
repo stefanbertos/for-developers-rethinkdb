@@ -1,0 +1,22 @@
+spring:
+  config:
+    activate:
+      on-profile: default
+
+rethinkdb:
+  host: localhost
+  port: 28015
+
+logbook:
+  include:
+    - /v1/product/**
+  filter.enabled: true
+  secure-filter.enabled: true
+  obfuscate:
+    headers:
+    parameters:
+
+logging:
+  level:
+    root: INFO
+    org.zalando.logbook: TRACE
