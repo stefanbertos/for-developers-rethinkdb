@@ -8,15 +8,14 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
-
 @Service
 @Slf4j
 public class ProductService {
     private final RethinkDbService rethinkDbService;
     private final String databaseName;
     private final String tableName;
-    public ProductService(RethinkDbService rethinkDbService, @Value("${rethinkdb.database}")  String databaseName, @Value("${rethinkdb.table}")String tableName) {
+
+    public ProductService(RethinkDbService rethinkDbService, @Value("${rethinkdb.database}") String databaseName, @Value("${rethinkdb.table}") String tableName) {
         this.rethinkDbService = rethinkDbService;
         this.databaseName = databaseName;
         this.tableName = tableName;
