@@ -28,6 +28,7 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 
 	implementation 'com.rethinkdb:rethinkdb-driver:2.4.4'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'

@@ -1,0 +1,15 @@
+services:
+  rethinkdb1:
+    image: rethinkdb
+    ports:
+      - "8088:8080"
+      - "29015:29015"
+      - "28015:28015"
+    command: rethinkdb --bind all --directory rethinkdb1
+  rethinkdb2:
+    image: rethinkdb
+    ports:
+      - "8089:8081"
+      - "29016:29016"
+      - "28016:28016"
+    command: rethinkdb --bind all --directory rethinkdb2 --port-offset 1 --join rethinkdb1:29015

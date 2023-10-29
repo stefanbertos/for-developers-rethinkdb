@@ -6,6 +6,10 @@ spring:
 rethinkdb:
   host: localhost
   port: 28015
+  database: productDB
+  table: product
+  username: admin
+  password: rethinkdb
 
 logbook:
   include:
