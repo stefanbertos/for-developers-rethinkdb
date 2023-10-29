@@ -9,7 +9,7 @@ rethinkdb:
   database: productDB
   table: product
   username: admin
-  password: rethinkdb
+  password:
 
 logbook:
   include:
