@@ -27,8 +27,8 @@ public class DemoApplication {
     }
 
     @Async
-    @EventListener
-    void onApplicationEvent(ApplicationStartedEvent event) {
+    @EventListener(ApplicationStartedEvent.class)
+    void onApplicationEvent() {
         rethinkDbService.createDatabase(databaseName);
         rethinkDbService.createTable(databaseName, tableName);
         rethinkDbService.listenToChanges(databaseName, tableName);

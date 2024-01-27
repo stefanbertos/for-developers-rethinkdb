@@ -5,8 +5,8 @@ import com.example.demo.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/v1/product")
@@ -15,18 +15,18 @@ public class ProductRestController {
     private final ProductService productService;
 
     @GetMapping
-    public Flux<Product> getAllProducts() {
+    public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
-    public Mono<Product> getProductById(@PathVariable Long id) {
+    public Product getById(@PathVariable Long id) {
         return productService.getProductById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void createProduct(@RequestBody Product product) {
-        productService.createProduct(product);
+    public Product createProduct(@RequestBody Product product) {
+        return productService.createProduct(product);
     }
 }

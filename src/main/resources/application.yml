@@ -3,6 +3,9 @@ spring:
     activate:
       on-profile: default
 
+server:
+  port: 8888
+
 rethinkdb:
   host: localhost
   port: 28015

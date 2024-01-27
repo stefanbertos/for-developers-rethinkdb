@@ -2,14 +2,12 @@ package com.example.demo.service;
 
 
 import com.example.demo.dto.Product;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Service
-@Slf4j
 public class ProductService {
     private final RethinkDbService rethinkDbService;
     private final String databaseName;
@@ -21,15 +19,15 @@ public class ProductService {
         this.tableName = tableName;
     }
 
-    public Flux<Product> getAllProducts() {
-        return Flux.fromStream(rethinkDbService.getAll(databaseName, tableName).stream());
+    public List<Product> getAllProducts() {
+        return rethinkDbService.getAll(databaseName, tableName);
     }
 
-    public Mono<Product> getProductById(Long id) {
-        return Mono.just(rethinkDbService.getById(databaseName, tableName, id));
+    public Product getProductById(Long id) {
+        return rethinkDbService.getById(databaseName, tableName, id);
     }
 
-    public void createProduct(Product product) {
-        rethinkDbService.insert(databaseName, tableName, product);
+    public Product createProduct(Product product) {
+        return rethinkDbService.insert(databaseName, tableName, product);
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.function.Function;
 
 
 @Service
@@ -19,63 +20,79 @@ public class RethinkDbService {
     private final String username;
     private final String password;
 
-    public RethinkDbService(@Value("${rethinkdb.host}") String host, @Value("${rethinkdb.port}") Integer port, @Value("${rethinkdb.username}") String username, @Value("${rethinkdb.password}") String password) {
+    public RethinkDbService(
+            @Value("${rethinkdb.host}") String host,
+            @Value("${rethinkdb.port}") Integer port,
+            @Value("${rethinkdb.username}") String username,
+            @Value("${rethinkdb.password}") String password
+    ) {
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
     }
 
-    public void createDatabase(String databaseName) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            try {
-                r.dbCreate(databaseName).run(connection).forEach(item -> log.info("Database created {}", item));
-            } catch (Exception e) {
-                //not a nice way but the checks wouldn't work as well see https://github.com/rethinkdb/rethinkdb/issues/5900
-                log.warn("Problem creating database {}",e);
-            }
+    // TODO connection pooling
+    private Connection createDbConnection() {
+        return r.connection().hostname(host).port(port).user(username, password).connect();
+    }
+
+    // TODO transactions
+    private <T> T performOperationAndLog(Function<Connection, T> action, String actionDetails, String resourceDetails) {
+        return performQueryTask(connection -> {
+            T result = action.apply(connection);
+            logOperationResult(result, actionDetails, resourceDetails);
+            return result;
+        });
+    }
+
+    private <T> void logOperationResult(T result, String actionDetails, String resourceDetails) {
+        Iterable<?> iterableResult = result instanceof Iterable ? (Iterable<?>) result : List.of(result);
+        if (iterableResult.iterator().hasNext()) {
+            log.info("{}, {}", actionDetails, iterableResult);
+        } else {
+            log.info("{}, {}", actionDetails, resourceDetails);
         }
+    }
+
+    private <T> T performQueryTask(Function<Connection, T> queryTask) {
+        try (Connection connection = createDbConnection()) {
+            return queryTask.apply(connection);
+        } catch (Exception e) {
+            logException(e);
+            throw new RuntimeException("An error occurred while performing the database operation", e);
+        }
+    }
+
+    private void logException(Exception e) {
+        log.warn("Problem with database operation", e);
+    }
+
+    public void createDatabase(String databaseName) {
+        //see https://github.com/rethinkdb/rethinkdb/issues/5900
+        performOperationAndLog(connection -> r.dbCreate(databaseName).run(connection), "Database created", databaseName);
     }
 
     public void createTable(String databaseName, String tableName) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            try {
-                // you can specify pk, shards, replicas default is just 1 etc see https://rethinkdb.com/api/javascript/table_create
-                r.db(databaseName).tableCreate(tableName).optArg("shards", 2).optArg("replicas", 3).run(connection).forEach(item -> log.info("Table created {}", item));
-            }catch (Exception e) {
-                //not a nice way but the checks wouldn't work as well see https://github.com/rethinkdb/rethinkdb/issues/5900
-                log.warn("Problem creating table {}",e);
-            }
-        }
+        // you can specify pk, shards, replicas default is just 1 see https://rethinkdb.com/api/javascript/table_create
+        // see https://github.com/rethinkdb/rethinkdb/issues/5900
+        performOperationAndLog(connection -> r.db(databaseName).tableCreate(tableName).optArg("shards", 2).optArg("replicas", 2).run(connection), "Table created", tableName);
     }
 
-    public void insert(String databaseName, String tableName, Product data) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            r.db(databaseName).table(tableName).insert(data).run(connection).forEach(item -> log.info("Data inserted {}", item));
-        }
-    }
-
-    public void update(String databaseName, String tableName, String id) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            r.db(databaseName).table(tableName).get(id).run(connection).forEach(item -> log.info("Data updated {}", item));
-        }
+    public Product insert(String databaseName, String tableName, Product data) {
+        performOperationAndLog(connection -> r.db(databaseName).table(tableName).insert(data).run(connection), "Data inserted", data.toString());
+        return data;
     }
 
     public List<Product> getAll(String databaseName, String tableName) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            return r.db(databaseName).table(tableName).run(connection, Product.class).toList();
-        }
+        return performOperationAndLog(connection -> r.db(databaseName).table(tableName).run(connection, Product.class).toList(), "All data fetched", tableName);
     }
 
     public Product getById(String databaseName, String tableName, Long id) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            return r.db(databaseName).table(tableName).get(id).run(connection, Product.class).single();
-        }
+        return performOperationAndLog(connection -> r.db(databaseName).table(tableName).get(id).run(connection, Product.class).single(), "Data fetched", Long.toString(id));
     }
 
     public void listenToChanges(String databaseName, String tableName) {
-        try (Connection connection = r.connection().hostname(host).port(port).user(username, password).connect()) {
-            r.db(databaseName).table(tableName).changes().run(connection).forEach(item -> log.info("Change {}", item));
-        }
+        performOperationAndLog(connection -> r.db(databaseName).table(tableName).changes().run(connection), "Change detected", tableName);
     }
 }
